@@ -4,15 +4,13 @@ from contextlib import asynccontextmanager
 
 from backend.database import engine, Base
 from backend.seed import seed_database
-from backend.routers import (
-    auth_router,
-    user_router,
-    skill_router,
-    exchange_router,
-    chat_router,
-    reward_router,
-    admin_router
-)
+from backend.routers import auth_router
+from backend.routers import user_router
+from backend.routers import skill_router
+from backend.routers import exchange_router
+from backend.routers import chat_router
+from backend.routers import reward_router
+from backend.routers import admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
