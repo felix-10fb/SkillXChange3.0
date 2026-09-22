@@ -17,7 +17,7 @@ import AdminPage from './pages/AdminPage';
 
 function AppContent() {
   const [currentUser, setCurrentUser] = useState(getUser());
-  const [theme, setTheme] = useState(localStorage.getItem('skillxchange_theme') || 'light');
+  const [theme, setTheme] = useState(localStorage.getItem('skillxchange_theme') || 'dark');
   const [toastMessage, setToastMessage] = useState('');
 
   // Modals
