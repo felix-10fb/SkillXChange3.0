@@ -1,68 +1,88 @@
 import React from 'react';
+import logoImg from '../assets/logo.jpg';
 
-export default function BrandLogo({ size = "md", showText = true, animated = false }) {
-  const sizeMap = {
-    sm: { icon: "w-8 h-8", text: "text-lg" },
-    md: { icon: "w-10 h-10", text: "text-xl" },
-    lg: { icon: "w-16 h-16", text: "text-3xl" },
-    xl: { icon: "w-24 h-24", text: "text-4xl" }
-  };
+const sizeMap = {
+  xs: { img: 28, text: '0.85rem', gap: '0.4rem' },
+  sm: { img: 36, text: '0.95rem', gap: '0.5rem' },
+  md: { img: 44, text: '1.1rem', gap: '0.6rem' },
+  lg: { img: 60, text: '1.4rem', gap: '0.7rem' },
+  xl: { img: 100, text: '1.8rem', gap: '0.9rem' },
+  '2xl': { img: 140, text: '2.2rem', gap: '1rem' },
+};
 
-  const dim = sizeMap[size] || sizeMap.md;
+export default function BrandLogo({ 
+  size = 'md', 
+  showText = true, 
+  animated = false,
+  vertical = false 
+}) {
+  const s = sizeMap[size] || sizeMap.md;
 
   return (
-    <div className="flex items-center gap-3 select-none">
-      {/* Brand Double-Arrow Circuit Logo SVG */}
-      <svg 
-        className={`${dim.icon} ${animated ? 'hover:scale-105 transition-transform duration-300' : ''}`}
-        viewBox="0 0 200 200" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: vertical ? 'column' : 'row',
+        alignItems: 'center',
+        gap: s.gap,
+        userSelect: 'none',
+      }}
+    >
+      {/* Logo Image */}
+      <div
+        style={{
+          width: s.img,
+          height: s.img,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          flexShrink: 0,
+          border: '2px solid rgba(222, 94, 68, 0.5)',
+          boxShadow: '0 4px 20px rgba(222, 94, 68, 0.35), 0 0 0 1px rgba(244,211,94,0.15)',
+          animation: animated ? 'pulseGlow 3s ease-in-out infinite' : 'none',
+          transition: 'transform 0.3s ease',
+        }}
+        className={animated ? 'animate-pulse-glow' : ''}
+        onMouseEnter={e => { if (animated) e.currentTarget.style.transform = 'scale(1.08)'; }}
+        onMouseLeave={e => { if (animated) e.currentTarget.style.transform = 'scale(1)'; }}
       >
-        {/* Top Purple Interlocking Arrow Loop */}
-        <path 
-          d="M 40,50 L 130,50 C 155,50 170,70 155,95 L 115,145 C 105,158 90,165 75,160 C 60,155 55,140 65,125 L 85,95 C 95,80 110,75 125,75 L 140,75" 
-          stroke="#2C1F56" 
-          strokeWidth="24" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
+        <img
+          src={logoImg}
+          alt="SkillXChange Logo"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
-        {/* Top Purple Arrowhead */}
-        <path 
-          d="M 120,35 L 145,50 L 120,65 Z" 
-          fill="#2C1F56" 
-        />
-        {/* Top Circuit Dot Line */}
-        <line x1="55" y1="85" x2="85" y2="55" stroke="#F4D35E" strokeWidth="6" strokeLinecap="round" />
-        <circle cx="55" cy="85" r="7" fill="#F4D35E" />
-
-        {/* Bottom Coral Interlocking Arrow Loop */}
-        <path 
-          d="M 160,150 L 70,150 C 45,150 30,130 45,105 L 85,55 C 95,42 110,35 125,40 C 140,45 145,60 135,75 L 115,105 C 105,120 90,125 75,125 L 60,125" 
-          stroke="#DE5E44" 
-          strokeWidth="24" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-        />
-        {/* Bottom Coral Arrowhead */}
-        <path 
-          d="M 80,165 L 55,150 L 80,135 Z" 
-          fill="#DE5E44" 
-        />
-        {/* Bottom Circuit Dot Line */}
-        <line x1="145" y1="115" x2="115" y2="145" stroke="#F4D35E" strokeWidth="6" strokeLinecap="round" />
-        <circle cx="145" cy="115" r="7" fill="#F4D35E" />
-      </svg>
+      </div>
 
       {/* Brand Text */}
       {showText && (
-        <div className="flex flex-col leading-none">
-          <span className={`font-black tracking-tight font-['Outfit'] ${dim.text}`} style={{ color: '#2C1F56' }}>
-            SKILL<span style={{ color: '#DE5E44' }}>X</span>CHANGE
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+          <span
+            style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: s.text,
+              fontWeight: 900,
+              letterSpacing: '-0.04em',
+              background: 'linear-gradient(135deg, #F0EAF8 30%, #DE5E44 70%, #F4D35E 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            SkillXChange
           </span>
-          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8E7DBE] mt-0.5">
-            Knowledge Marketplace
-          </span>
+          {(size === 'lg' || size === 'xl' || size === '2xl') && (
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
+                color: 'rgba(196, 181, 232, 0.7)',
+                textTransform: 'uppercase',
+                marginTop: '2px',
+              }}
+            >
+              Learn · Exchange · Grow
+            </span>
+          )}
         </div>
       )}
     </div>

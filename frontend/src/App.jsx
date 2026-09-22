@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
 
 import { api, getUser, setToken, setUser, getToken } from './api/client';
 
 import Navbar from './components/Navbar';
+import BrandLogo from './components/BrandLogo';
 import AuthModal from './components/AuthModal';
 import CreateSkillModal from './components/CreateSkillModal';
 
@@ -15,19 +16,55 @@ import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 
+function Toast({ message, type = 'info', onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [message]);
+
+  const colors = {
+    info: { border: 'var(--border-coral)', icon: <Sparkles size={18} style={{ color: 'var(--gold)' }} /> },
+    success: { border: 'rgba(76, 175, 80, 0.5)', icon: <CheckCircle size={18} style={{ color: '#4CAF50' }} /> },
+    error: { border: 'rgba(220, 50, 50, 0.5)', icon: <AlertCircle size={18} style={{ color: '#FF6060' }} /> },
+  };
+
+  const c = colors[type] || colors.info;
+
+  return (
+    <div style={{
+      position: 'fixed', top: '70px', right: '1.5rem', zIndex: 9999,
+      padding: '0.9rem 1.25rem',
+      borderRadius: '16px',
+      background: 'var(--bg-elevated)',
+      border: `1px solid ${c.border}`,
+      color: 'var(--text-primary)',
+      fontWeight: 700, fontSize: '0.875rem',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', gap: '0.75rem',
+      backdropFilter: 'blur(20px)',
+      maxWidth: '360px',
+      animation: 'toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    }}>
+      {c.icon}
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={onClose}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1, padding: 0 }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 function AppContent() {
   const [currentUser, setCurrentUser] = useState(getUser());
   const [theme, setTheme] = useState(localStorage.getItem('skillxchange_theme') || 'dark');
-  const [toastMessage, setToastMessage] = useState('');
-
-  // Modals
+  const [toasts, setToasts] = useState([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCreateSkillOpen, setIsCreateSkillOpen] = useState(false);
-
-  // Shared Chat contact state
   const [activeContact, setActiveContact] = useState(null);
   const [exchangesCount, setExchangesCount] = useState(0);
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +72,7 @@ function AppContent() {
     localStorage.setItem('skillxchange_theme', theme);
   }, [theme]);
 
+  // Restore session from stored token
   useEffect(() => {
     if (getToken()) {
       api.getMe()
@@ -50,10 +88,12 @@ function AppContent() {
     }
   }, []);
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 4000);
+  const showToast = (msg, type = 'info') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, msg, type }]);
   };
+
+  const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
   const handleDemoLogin = async (email, password) => {
     try {
@@ -61,9 +101,9 @@ function AppContent() {
       setToken(res.access_token);
       setUser(res.user);
       setCurrentUser(res.user);
-      showToast(`Welcome ${res.user.full_name}! 🔥`);
+      showToast(`Welcome back, ${res.user.full_name}! 🔥`, 'success');
     } catch (err) {
-      showToast("Demo login: " + err.message);
+      showToast('Demo login failed: ' + err.message, 'error');
     }
   };
 
@@ -71,20 +111,23 @@ function AppContent() {
     setToken(null);
     setUser(null);
     setCurrentUser(null);
-    showToast("Signed out successfully.");
+    showToast('Signed out. See you soon! 👋', 'info');
+  };
+
+  const handleAuthSuccess = (u) => {
+    setCurrentUser(u);
+    showToast(`Welcome, ${u.full_name}! You have ${u.skillcoins} 🪙 to spend!`, 'success');
   };
 
   return (
-    <div className="min-h-screen flex flex-col transition-colors duration-300">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl glass-panel border-[#DE5E44]/40 text-[#DE5E44] dark:text-white text-xs font-black shadow-2xl animate-in slide-in-from-top-4 duration-200 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-500" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Global Navigation Bar */}
+      {/* Toasts */}
+      {toasts.map((t) => (
+        <Toast key={t.id} message={t.msg} type={t.type} onClose={() => removeToast(t.id)} />
+      ))}
+
+      {/* Navbar */}
       <Navbar
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
@@ -95,106 +138,85 @@ function AppContent() {
         setTheme={setTheme}
       />
 
-      {/* Main Multi-Page Route Container */}
-      <main className="max-w-7xl mx-auto px-4 w-full flex-1">
+      {/* Pages */}
+      <main style={{ flex: 1 }}>
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <HomePage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                onDemoLogin={handleDemoLogin}
-                onOpenCreateSkill={() => currentUser ? setIsCreateSkillOpen(true) : setIsAuthOpen(true)}
-              />
-            } 
-          />
-
-          <Route 
-            path="/explore" 
-            element={
-              <ExplorePage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                onOpenCreateSkill={() => setIsCreateSkillOpen(true)}
-                onChatUser={(userId, userName) => {
-                  setActiveContact({ id: userId, name: userName });
-                  navigate('/chat');
-                }}
-                showToast={showToast}
-              />
-            } 
-          />
-
-          <Route 
-            path="/rewards" 
-            element={
-              <RewardsPage 
-                currentUser={currentUser}
-                onUserUpdated={(u) => setCurrentUser(u)}
-                showToast={showToast}
-                onOpenAuth={() => setIsAuthOpen(true)}
-              />
-            } 
-          />
-
-          <Route 
-            path="/dashboard" 
-            element={
-              <DashboardPage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                showToast={showToast}
-                setExchangesCount={setExchangesCount}
-              />
-            } 
-          />
-
-          <Route 
-            path="/chat" 
-            element={
-              <ChatPage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                activeContact={activeContact}
-                setActiveContact={setActiveContact}
-              />
-            } 
-          />
-
-          <Route 
-            path="/admin" 
-            element={
-              <AdminPage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                showToast={showToast}
-              />
-            } 
-          />
-
-          {/* Catch-all fallback route */}
-          <Route 
-            path="*" 
-            element={
-              <HomePage 
-                currentUser={currentUser}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                onDemoLogin={handleDemoLogin}
-                onOpenCreateSkill={() => currentUser ? setIsCreateSkillOpen(true) : setIsAuthOpen(true)}
-              />
-            } 
-          />
+          <Route path="/" element={
+            <HomePage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              onDemoLogin={handleDemoLogin}
+              onOpenCreateSkill={() => currentUser ? setIsCreateSkillOpen(true) : setIsAuthOpen(true)}
+            />
+          } />
+          <Route path="/explore" element={
+            <ExplorePage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              onOpenCreateSkill={() => setIsCreateSkillOpen(true)}
+              onChatUser={(userId, userName) => {
+                setActiveContact({ id: userId, name: userName });
+                navigate('/chat');
+              }}
+              showToast={showToast}
+            />
+          } />
+          <Route path="/rewards" element={
+            <RewardsPage
+              currentUser={currentUser}
+              onUserUpdated={(u) => { setCurrentUser(u); setUser(u); }}
+              showToast={showToast}
+              onOpenAuth={() => setIsAuthOpen(true)}
+            />
+          } />
+          <Route path="/dashboard" element={
+            <DashboardPage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              showToast={showToast}
+              setExchangesCount={setExchangesCount}
+            />
+          } />
+          <Route path="/chat" element={
+            <ChatPage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              activeContact={activeContact}
+              setActiveContact={setActiveContact}
+            />
+          } />
+          <Route path="/admin" element={
+            <AdminPage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              showToast={showToast}
+            />
+          } />
+          <Route path="*" element={
+            <HomePage
+              currentUser={currentUser}
+              onOpenAuth={() => setIsAuthOpen(true)}
+              onDemoLogin={handleDemoLogin}
+              onOpenCreateSkill={() => currentUser ? setIsCreateSkillOpen(true) : setIsAuthOpen(true)}
+            />
+          } />
         </Routes>
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto py-8 text-center text-xs text-slate-500 border-t border-slate-900/10 dark:border-white/5 space-y-2">
-        <p className="font-bold text-slate-600 dark:text-slate-400">
-          SkillXChange Platform &bull; Deep Indigo & Terracotta Coral Brand Palette &bull; Neon PostgreSQL
+      <footer style={{
+        padding: '2rem 1.5rem', textAlign: 'center',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(13, 8, 32, 0.4)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+          <BrandLogo size="sm" showText animated={false} />
+        </div>
+        <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-faint)', marginBottom: '0.25rem' }}>
+          SkillXChange Platform · Deep Indigo & Terracotta Coral · Neon PostgreSQL
         </p>
-        <p className="text-[11px] opacity-75">
-          Streaks 🔥 &bull; SkillCoins 🪙 &bull; Multi-Page Routing &bull; Live Chat Studio &bull; Admin Command Center
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-faint)', opacity: 0.6 }}>
+          Streaks 🔥 · SkillCoins 🪙 · Live Chat · Admin Portal · FastAPI Powered
         </p>
       </footer>
 
@@ -202,19 +224,13 @@ function AppContent() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={(u) => {
-          setCurrentUser(u);
-          showToast(`Welcome ${u.full_name}! 🔥`);
-        }}
+        onAuthSuccess={handleAuthSuccess}
         onDemoLogin={handleDemoLogin}
       />
-
       <CreateSkillModal
         isOpen={isCreateSkillOpen}
         onClose={() => setIsCreateSkillOpen(false)}
-        onSkillCreated={() => {
-          showToast("Skill published successfully! 🎉");
-        }}
+        onSkillCreated={() => showToast('Skill published! 🎉 Start earning SkillCoins.', 'success')}
       />
     </div>
   );
