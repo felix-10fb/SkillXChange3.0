@@ -14,13 +14,16 @@ from backend.routers import admin_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create database schema and seed initial data on startup
-    try:
-        print("Initializing Neon Postgres tables...")
-        Base.metadata.create_all(bind=engine)
-        seed_database()
-    except Exception as e:
-        print("Database startup error:", e)
+    # Skip heavy DB init on Vercel serverless (tables + seed already exist).
+    # Only run create_all / seed locally or on first deploy.
+    import os
+    if not os.getenv("VERCEL"):
+        try:
+            print("Initializing Neon Postgres tables...")
+            Base.metadata.create_all(bind=engine)
+            seed_database()
+        except Exception as e:
+            print("Database startup error:", e)
     yield
 
 app = FastAPI(
