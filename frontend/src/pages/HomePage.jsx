@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, Coins, Zap, Shield, Sparkles, ArrowRight, BookOpen, Users, RefreshCw, Star, CheckCircle } from 'lucide-react';
+import { Flame, Coins, Zap, Shield, Sparkles, ArrowRight, BookOpen, Users, RefreshCw, Star, CheckCircle, Compass } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 
 export default function HomePage({ currentUser, onOpenAuth, onDemoLogin, onOpenCreateSkill }) {
